@@ -282,6 +282,18 @@ fn create_match_expr(
     enumvariants: &[&EnumDispatchVariant],
 ) -> syn::Expr {
     let trait_fn_call = create_trait_fn_call(trait_method, trait_generics, trait_name);
+    let trait_fn_call_expr = if trait_method.sig.asyncness.is_some() {
+        syn::Expr::from(
+            syn::ExprAwait {
+                attrs: Vec::new(),
+                base: Box::new(trait_fn_call.into()),
+                dot_token: Default::default(),
+                await_token: Default::default(),
+            }
+        )
+    } else {
+        syn::Expr::from(trait_fn_call)
+    };
 
     // Creates a Vec containing a match arm for every enum variant
     let match_arms = enumvariants
@@ -302,7 +314,7 @@ fn create_match_expr(
                 },
                 guard: None,
                 fat_arrow_token: Default::default(),
-                body: Box::new(syn::Expr::from(trait_fn_call.to_owned())),
+                body: Box::new(syn::Expr::from(trait_fn_call_expr.to_owned())),
                 comma: Some(Default::default()),
             }
         })
